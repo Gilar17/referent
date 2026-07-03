@@ -4,6 +4,12 @@ import { useState } from "react";
 
 type Action = "summary" | "theses" | "telegram";
 
+type ParsedArticle = {
+  date: string | null;
+  title: string | null;
+  content: string | null;
+};
+
 const ACTIONS: { id: Action; label: string }[] = [
   { id: "summary", label: "О чем статья?" },
   { id: "theses", label: "Тезисы" },
@@ -53,13 +59,13 @@ export function ArticleForm() {
         body: JSON.stringify({ url: trimmedUrl, action }),
       });
 
-      const data = (await response.json()) as { result?: string; error?: string };
+      const data = (await response.json()) as ParsedArticle & { error?: string };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Не удалось выполнить запрос");
       }
 
-      setResult(data.result ?? "");
+      setResult(JSON.stringify(data, null, 2));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
       setResult("");
@@ -127,7 +133,7 @@ export function ArticleForm() {
         {isLoading && (
           <div className="flex items-center gap-3 text-slate-600">
             <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
-            <span>Генерация ответа…</span>
+            <span>Загрузка и парсинг статьи…</span>
           </div>
         )}
 
@@ -138,7 +144,7 @@ export function ArticleForm() {
         )}
 
         {!isLoading && result && (
-          <div className="whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 text-slate-800 leading-relaxed">
+          <div className="overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 font-mono text-sm text-slate-800 leading-relaxed">
             {result}
           </div>
         )}

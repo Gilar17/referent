@@ -1,15 +1,7 @@
+import { fetchAndParseArticle } from "@/lib/parse-article";
 import { NextResponse } from "next/server";
 
 type Action = "summary" | "theses" | "telegram";
-
-const PLACEHOLDERS: Record<Action, string> = {
-  summary:
-    "Краткое содержание статьи появится здесь после подключения парсера и AI-модели.",
-  theses:
-    "Список тезисов появится здесь после подключения парсера и AI-модели.",
-  telegram:
-    "Текст поста для Telegram появится здесь после подключения парсера и AI-модели.",
-};
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { url?: string; action?: Action };
@@ -25,7 +17,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Неизвестный тип действия" }, { status: 400 });
   }
 
-  return NextResponse.json({
-    result: PLACEHOLDERS[body.action],
-  });
+  try {
+    const article = await fetchAndParseArticle(body.url);
+
+    return NextResponse.json({
+      date: article.date,
+      title: article.title,
+      content: article.content,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Не удалось распарсить статью";
+
+    return NextResponse.json({ error: message }, { status: 422 });
+  }
 }
