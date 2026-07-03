@@ -1,20 +1,9 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", system-ui, sans-serif;
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
-  padding: 2rem;
-}
-
-main {
-  max-width: 40rem;
-}
-
-h1 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  @apply bg-slate-50 text-slate-900 antialiased;
 }
