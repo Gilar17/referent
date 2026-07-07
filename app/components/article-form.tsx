@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Action = "summary" | "theses" | "telegram";
+type Action = "summary" | "theses" | "telegram" | "translate";
 
 type ParsedArticle = {
   date: string | null;
@@ -10,7 +10,13 @@ type ParsedArticle = {
   content: string | null;
 };
 
+type ApiResponse = ParsedArticle & {
+  result?: string;
+  error?: string;
+};
+
 const ACTIONS: { id: Action; label: string }[] = [
+  { id: "translate", label: "Перевод" },
   { id: "summary", label: "О чем статья?" },
   { id: "theses", label: "Тезисы" },
   { id: "telegram", label: "Пост для Telegram" },
@@ -31,6 +37,7 @@ export function ArticleForm() {
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resultIsJson, setResultIsJson] = useState(false);
 
   async function handleAction(action: Action) {
     const trimmedUrl = url.trim();
@@ -51,6 +58,7 @@ export function ArticleForm() {
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
+    setResultIsJson(false);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -59,13 +67,19 @@ export function ArticleForm() {
         body: JSON.stringify({ url: trimmedUrl, action }),
       });
 
-      const data = (await response.json()) as ParsedArticle & { error?: string };
+      const data = (await response.json()) as ApiResponse;
 
       if (!response.ok) {
         throw new Error(data.error ?? "Не удалось выполнить запрос");
       }
 
-      setResult(JSON.stringify(data, null, 2));
+      if (action === "translate") {
+        setResult(data.result ?? "");
+        setResultIsJson(false);
+      } else {
+        setResult(JSON.stringify(data, null, 2));
+        setResultIsJson(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
       setResult("");
@@ -133,7 +147,11 @@ export function ArticleForm() {
         {isLoading && (
           <div className="flex items-center gap-3 text-slate-600">
             <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
-            <span>Загрузка и парсинг статьи…</span>
+            <span>
+              {activeAction === "translate"
+                ? "Перевод статьи…"
+                : "Загрузка и парсинг статьи…"}
+            </span>
           </div>
         )}
 
@@ -144,7 +162,11 @@ export function ArticleForm() {
         )}
 
         {!isLoading && result && (
-          <div className="overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 font-mono text-sm text-slate-800 leading-relaxed">
+          <div
+            className={`overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 text-slate-800 leading-relaxed ${
+              resultIsJson ? "font-mono text-sm" : "text-base"
+            }`}
+          >
             {result}
           </div>
         )}
