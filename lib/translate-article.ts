@@ -1,34 +1,43 @@
 import { chatCompletion } from "@/lib/openrouter";
 import type { ParsedArticle } from "@/lib/parse-article";
 
-export async function translateArticle(article: ParsedArticle): Promise<string> {
-  if (!article.title && !article.content) {
-    throw new Error("Нет текста для перевода");
-  }
+const MAX_CONTENT_LENGTH = 20000;
 
+function buildArticleText(article: ParsedArticle): string {
   const parts: string[] = [];
 
-  if (article.title) {
-    parts.push(`Title:\n${article.title}`);
+  if (article.title?.trim()) {
+    parts.push(`Title:\n${article.title.trim()}`);
   }
 
-  if (article.date) {
-    parts.push(`Date:\n${article.date}`);
+  if (article.date?.trim()) {
+    parts.push(`Date:\n${article.date.trim()}`);
   }
 
-  if (article.content) {
-    parts.push(`Content:\n${article.content}`);
+  if (article.content?.trim()) {
+    parts.push(`Content:\n${article.content.trim().slice(0, MAX_CONTENT_LENGTH)}`);
+  }
+
+  return parts.join("\n\n");
+}
+
+export async function translateArticle(article: ParsedArticle): Promise<string> {
+  const articleText = buildArticleText(article);
+
+  if (!articleText) {
+    throw new Error("Не удалось извлечь текст статьи для перевода");
   }
 
   return chatCompletion([
     {
-      role: "system",
-      content:
-        "You are a professional translator. Translate English articles into Russian. Preserve structure: first output the translated title (if present), then date (if present), then the full translated article text. Write naturally in Russian. Do not add comments or explanations.",
-    },
-    {
       role: "user",
-      content: `Translate the following article into Russian:\n\n${parts.join("\n\n")}`,
+      content: [
+        "Переведи на русский язык следующую англоязычную статью.",
+        "Сохрани структуру: сначала заголовок, затем дата (если есть), затем основной текст.",
+        "Не добавляй пояснений до или после перевода.",
+        "",
+        articleText,
+      ].join("\n"),
     },
   ]);
 }

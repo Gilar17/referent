@@ -22,8 +22,8 @@ export async function POST(request: Request) {
     const article = await fetchAndParseArticle(body.url);
 
     if (body.action === "translate") {
-      const translation = await translateArticle(article);
-      return NextResponse.json({ result: translation });
+      const result = await translateArticle(article);
+      return NextResponse.json({ result });
     }
 
     return NextResponse.json({

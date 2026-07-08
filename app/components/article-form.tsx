@@ -149,7 +149,7 @@ export function ArticleForm() {
             <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
             <span>
               {activeAction === "translate"
-                ? "Перевод статьи…"
+                ? "Перевод выполняется…"
                 : "Загрузка и парсинг статьи…"}
             </span>
           </div>
