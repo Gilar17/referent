@@ -19,9 +19,10 @@ const ACTION_INSTRUCTIONS: Record<AnalyzeAction, string[]> = {
   ],
   telegram: [
     "Напиши готовый пост для Telegram по этой статье.",
-    "На русском языке: хук или заголовок, затем основной текст; при необходимости эмодзи и абзацы.",
+    "КРИТИЧЕСКИ ВАЖНО: весь текст поста должен быть строго на русском языке. Не пиши на английском. Переведи все факты, даты, названия мероприятий и описания на русский.",
+    "Структура: хук или заголовок, затем основной текст; при необходимости эмодзи и абзацы.",
     "Текст должен быть удобен для копирования целиком.",
-    "Не добавляй пояснений до или после поста.",
+    "Не добавляй пояснений до или после поста и не добавляй ссылку на источник — она будет добавлена отдельно.",
   ],
 };
 
@@ -37,9 +38,21 @@ function buildPrompt(action: AnalyzeAction, articleText: string): string {
   ].join("\n");
 }
 
+function appendSourceLink(post: string, sourceUrl: string): string {
+  const trimmed = post.trim();
+  const sourceBlock = `Источник: ${sourceUrl}`;
+
+  if (trimmed.includes(sourceUrl)) {
+    return trimmed;
+  }
+
+  return `${trimmed}\n\n${sourceBlock}`;
+}
+
 export async function analyzeArticle(
   article: ParsedArticle,
   action: AnalyzeAction,
+  sourceUrl?: string,
 ): Promise<string> {
   const articleText = buildArticleText(article);
 
@@ -47,12 +60,18 @@ export async function analyzeArticle(
     throw new Error("Не удалось извлечь текст статьи для анализа");
   }
 
-  return chatCompletion([
+  const result = await chatCompletion([
     {
       role: "user",
       content: buildPrompt(action, articleText),
     },
   ]);
+
+  if (action === "telegram" && sourceUrl) {
+    return appendSourceLink(result, sourceUrl);
+  }
+
+  return result;
 }
 
 export async function summarizeArticle(article: ParsedArticle): Promise<string> {
@@ -63,6 +82,9 @@ export async function extractTheses(article: ParsedArticle): Promise<string> {
   return analyzeArticle(article, "theses");
 }
 
-export async function createTelegramPost(article: ParsedArticle): Promise<string> {
-  return analyzeArticle(article, "telegram");
+export async function createTelegramPost(
+  article: ParsedArticle,
+  sourceUrl?: string,
+): Promise<string> {
+  return analyzeArticle(article, "telegram", sourceUrl);
 }

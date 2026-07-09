@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     if (isAnalyzeAction(body.action)) {
-      const result = await analyzeArticle(article, body.action);
+      const result = await analyzeArticle(article, body.action, body.url);
       return NextResponse.json({ result });
     }
 
