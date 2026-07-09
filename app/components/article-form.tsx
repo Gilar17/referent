@@ -2,7 +2,7 @@
 
 import {
   ANALYZE_ACTION_CONTRACTS,
-  type Action,
+  type AnalyzeAction,
 } from "@/lib/actions";
 import { useState } from "react";
 
@@ -11,13 +11,33 @@ type ApiResponse = {
   error?: string;
 };
 
-const ACTIONS: { id: Action; label: string }[] = [
-  { id: "translate", label: "Перевод" },
-  ...Object.values(ANALYZE_ACTION_CONTRACTS).map(({ id, label }) => ({ id, label })),
+const ACTIONS: {
+  id: AnalyzeAction;
+  label: string;
+  className: string;
+  activeClassName: string;
+}[] = [
+  {
+    id: "summary",
+    label: ANALYZE_ACTION_CONTRACTS.summary.label,
+    className: "bg-emerald-100 text-emerald-900 hover:bg-emerald-200",
+    activeClassName: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-600",
+  },
+  {
+    id: "theses",
+    label: ANALYZE_ACTION_CONTRACTS.theses.label,
+    className: "bg-amber-100 text-amber-900 hover:bg-amber-200",
+    activeClassName: "bg-amber-600 text-white shadow-sm hover:bg-amber-600",
+  },
+  {
+    id: "telegram",
+    label: ANALYZE_ACTION_CONTRACTS.telegram.label,
+    className: "bg-sky-100 text-sky-900 hover:bg-sky-200",
+    activeClassName: "bg-sky-600 text-white shadow-sm hover:bg-sky-600",
+  },
 ];
 
-const LOADING_MESSAGES: Record<Action, string> = {
-  translate: "Перевод выполняется…",
+const LOADING_MESSAGES: Record<AnalyzeAction, string> = {
   summary: "Готовим краткое описание…",
   theses: "Формируем тезисы…",
   telegram: "Пишем пост для Telegram…",
@@ -34,12 +54,12 @@ function isValidUrl(value: string): boolean {
 
 export function ArticleForm() {
   const [url, setUrl] = useState("");
-  const [activeAction, setActiveAction] = useState<Action | null>(null);
+  const [activeAction, setActiveAction] = useState<AnalyzeAction | null>(null);
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleAction(action: Action) {
+  async function handleAction(action: AnalyzeAction) {
     const trimmedUrl = url.trim();
 
     if (!trimmedUrl) {
@@ -110,16 +130,14 @@ export function ArticleForm() {
         />
 
         <div className="mt-4 flex flex-wrap gap-3">
-          {ACTIONS.map(({ id, label }) => (
+          {ACTIONS.map(({ id, label, className, activeClassName }) => (
             <button
               key={id}
               type="button"
               onClick={() => handleAction(id)}
               disabled={isLoading}
               className={`rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                activeAction === id
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                activeAction === id ? activeClassName : className
               }`}
             >
               {label}

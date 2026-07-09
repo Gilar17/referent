@@ -4,10 +4,9 @@
  */
 
 export const ANALYZE_ACTIONS = ["summary", "theses", "telegram"] as const;
-export const ALL_ACTIONS = [...ANALYZE_ACTIONS, "translate"] as const;
 
 export type AnalyzeAction = (typeof ANALYZE_ACTIONS)[number];
-export type Action = (typeof ALL_ACTIONS)[number];
+export type Action = AnalyzeAction;
 
 export type ActionContract = {
   id: AnalyzeAction;
@@ -42,11 +41,11 @@ export const ANALYZE_ACTION_CONTRACTS: Record<AnalyzeAction, ActionContract> = {
 };
 
 export function isAction(value: unknown): value is Action {
-  return typeof value === "string" && (ALL_ACTIONS as readonly string[]).includes(value);
-}
-
-export function isAnalyzeAction(value: unknown): value is AnalyzeAction {
   return (
     typeof value === "string" && (ANALYZE_ACTIONS as readonly string[]).includes(value)
   );
+}
+
+export function isAnalyzeAction(value: unknown): value is AnalyzeAction {
+  return isAction(value);
 }
