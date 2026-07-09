@@ -1,8 +1,8 @@
+import { isAction, isAnalyzeAction, type Action } from "@/lib/actions";
+import { analyzeArticle } from "@/lib/analyze-article";
 import { fetchAndParseArticle } from "@/lib/parse-article";
 import { translateArticle } from "@/lib/translate-article";
 import { NextResponse } from "next/server";
-
-type Action = "summary" | "theses" | "telegram" | "translate";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { url?: string; action?: Action };
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!["summary", "theses", "telegram", "translate"].includes(body.action)) {
+  if (!isAction(body.action)) {
     return NextResponse.json({ error: "Неизвестный тип действия" }, { status: 400 });
   }
 
@@ -26,11 +26,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ result });
     }
 
-    return NextResponse.json({
-      date: article.date,
-      title: article.title,
-      content: article.content,
-    });
+    if (isAnalyzeAction(body.action)) {
+      const result = await analyzeArticle(article, body.action);
+      return NextResponse.json({ result });
+    }
+
+    return NextResponse.json({ error: "Неизвестный тип действия" }, { status: 400 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Не удалось обработать статью";

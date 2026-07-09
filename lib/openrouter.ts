@@ -29,7 +29,7 @@ function getApiKey(): string {
 
   if (!apiKey) {
     throw new Error(
-      "OPENROUTER_API_KEY не найден в .env.local. Добавьте ключ OpenRouter.",
+      "OPENROUTER_API_KEY не задан. Локально добавьте его в .env.local, на Vercel — в Settings → Environment Variables.",
     );
   }
 

@@ -1,26 +1,27 @@
 "use client";
 
+import {
+  ANALYZE_ACTION_CONTRACTS,
+  type Action,
+} from "@/lib/actions";
 import { useState } from "react";
 
-type Action = "summary" | "theses" | "telegram" | "translate";
-
-type ParsedArticle = {
-  date: string | null;
-  title: string | null;
-  content: string | null;
-};
-
-type ApiResponse = ParsedArticle & {
+type ApiResponse = {
   result?: string;
   error?: string;
 };
 
 const ACTIONS: { id: Action; label: string }[] = [
   { id: "translate", label: "Перевод" },
-  { id: "summary", label: "О чем статья?" },
-  { id: "theses", label: "Тезисы" },
-  { id: "telegram", label: "Пост для Telegram" },
+  ...Object.values(ANALYZE_ACTION_CONTRACTS).map(({ id, label }) => ({ id, label })),
 ];
+
+const LOADING_MESSAGES: Record<Action, string> = {
+  translate: "Перевод выполняется…",
+  summary: "Готовим краткое описание…",
+  theses: "Формируем тезисы…",
+  telegram: "Пишем пост для Telegram…",
+};
 
 function isValidUrl(value: string): boolean {
   try {
@@ -37,7 +38,6 @@ export function ArticleForm() {
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [resultIsJson, setResultIsJson] = useState(false);
 
   async function handleAction(action: Action) {
     const trimmedUrl = url.trim();
@@ -58,7 +58,6 @@ export function ArticleForm() {
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
-    setResultIsJson(false);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -73,13 +72,7 @@ export function ArticleForm() {
         throw new Error(data.error ?? "Не удалось выполнить запрос");
       }
 
-      if (action === "translate") {
-        setResult(data.result ?? "");
-        setResultIsJson(false);
-      } else {
-        setResult(JSON.stringify(data, null, 2));
-        setResultIsJson(true);
-      }
+      setResult(data.result ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
       setResult("");
@@ -148,9 +141,7 @@ export function ArticleForm() {
           <div className="flex items-center gap-3 text-slate-600">
             <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
             <span>
-              {activeAction === "translate"
-                ? "Перевод выполняется…"
-                : "Загрузка и парсинг статьи…"}
+              {activeAction ? LOADING_MESSAGES[activeAction] : "Обработка…"}
             </span>
           </div>
         )}
@@ -162,11 +153,7 @@ export function ArticleForm() {
         )}
 
         {!isLoading && result && (
-          <div
-            className={`overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 text-slate-800 leading-relaxed ${
-              resultIsJson ? "font-mono text-sm" : "text-base"
-            }`}
-          >
+          <div className="overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed">
             {result}
           </div>
         )}
