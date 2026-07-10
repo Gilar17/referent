@@ -5,5 +5,5 @@
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply min-w-0 bg-slate-50 text-slate-900 antialiased;
 }

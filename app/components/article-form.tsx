@@ -212,21 +212,21 @@ export function ArticleForm() {
   const errorMessage = errorCode ? getFriendlyErrorMessage(errorCode) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-      <header className="space-y-2">
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6 sm:gap-8">
+      <header className="min-w-0 space-y-2">
         <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
           Referent
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
           Анализ англоязычных статей
         </h1>
-        <p className="text-slate-600">
+        <p className="text-sm text-slate-600 sm:text-base">
           Вставьте ссылку на статью и выберите, как обработать материал с помощью
           ИИ.
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <label htmlFor="article-url" className="mb-2 block text-sm font-medium text-slate-700">
           URL англоязычной статьи
         </label>
@@ -236,13 +236,13 @@ export function ArticleForm() {
           value={url}
           onChange={(event) => setUrl(event.target.value)}
           placeholder="Введите URL статьи, например: https://example.com/article"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          className="w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
         />
         <p className="mt-2 text-xs text-slate-500">
           Укажите ссылку на англоязычную статью
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex w-full min-w-0 flex-col gap-3 md:flex-row md:flex-wrap">
           {ACTIONS.map(({ id, label, color, title }) => {
             const isActive = activeAction === id;
 
@@ -254,7 +254,7 @@ export function ArticleForm() {
                 onClick={() => handleAction(id)}
                 disabled={isLoading}
                 style={{ backgroundColor: color }}
-                className={`rounded-xl px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`w-full rounded-xl px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto ${
                   isActive ? "shadow-md ring-2 ring-offset-2 ring-slate-400" : ""
                 }`}
               >
@@ -268,34 +268,34 @@ export function ArticleForm() {
             title="Сбросить URL, результат, ошибки и состояние"
             onClick={handleClear}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
           >
-            <Eraser className="size-4" />
+            <Eraser className="size-4 shrink-0" />
             Очистить
           </button>
         </div>
 
         {errorMessage && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle />
+          <Alert variant="destructive" className="mt-4 min-w-0 break-words">
+            <AlertCircle className="shrink-0" />
             <AlertTitle>Ошибка</AlertTitle>
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription className="break-words">{errorMessage}</AlertDescription>
           </Alert>
         )}
       </section>
 
       {processStatus && (
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
           <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
-          <span>{processStatus}</span>
+          <span className="min-w-0 break-words">{processStatus}</span>
         </div>
       )}
 
       <section
         ref={resultSectionRef}
-        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm scroll-mt-6"
+        className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm scroll-mt-6 sm:p-6"
       >
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-medium text-slate-900">Результат</h2>
 
           {result && !isLoading && (
@@ -303,16 +303,16 @@ export function ArticleForm() {
               type="button"
               title="Скопировать результат в буфер обмена"
               onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto"
             >
               {copied ? (
                 <>
-                  <Check className="size-4 text-emerald-600" />
+                  <Check className="size-4 shrink-0 text-emerald-600" />
                   Скопировано
                 </>
               ) : (
                 <>
-                  <Copy className="size-4" />
+                  <Copy className="size-4 shrink-0" />
                   Копировать
                 </>
               )}
@@ -327,7 +327,7 @@ export function ArticleForm() {
         )}
 
         {!isLoading && result && (
-          <div className="overflow-x-auto whitespace-pre-wrap rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed">
+          <div className="max-w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed [overflow-wrap:anywhere]">
             {result}
           </div>
         )}
