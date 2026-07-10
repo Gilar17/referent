@@ -52,13 +52,24 @@ const ACTIONS: {
     color: "#7E70B9",
     title: "Напишет готовый пост для Telegram со ссылкой на источник",
   },
+  {
+    id: "illustration",
+    label: ANALYZE_ACTION_CONTRACTS.illustration.label,
+    color: "#A469A0",
+    title: "Создаст иллюстрацию по смыслу статьи",
+  },
 ];
 
 const ACTION_PROCESS_MESSAGES: Record<AnalyzeAction, string> = {
   summary: "Готовлю краткое описание…",
   theses: "Формирую тезисы…",
   telegram: "Пишу пост для Telegram…",
+  illustration: "Генерирую иллюстрацию…",
 };
+
+function isImageResult(value: string): boolean {
+  return value.startsWith("data:image/");
+}
 
 function isValidUrl(value: string): boolean {
   try {
@@ -209,7 +220,11 @@ export function ArticleForm() {
     setResult("");
     setArticleTitle(null);
     setCopied(false);
-    setProcessStatus("Загружаю статью…");
+    setProcessStatus(
+      action === "illustration"
+        ? "Готовлю промпт для иллюстрации…"
+        : "Загружаю статью…",
+    );
 
     try {
       let response: Response;
@@ -254,14 +269,18 @@ export function ArticleForm() {
 
       setArticleTitle(nextTitle);
       setResult(nextResult);
-      setHistory(
-        addHistoryItem({
-          url: trimmedUrl,
-          action,
-          result: nextResult,
-          title: nextTitle,
-        }),
-      );
+      try {
+        setHistory(
+          addHistoryItem({
+            url: trimmedUrl,
+            action,
+            result: nextResult,
+            title: nextTitle,
+          }),
+        );
+      } catch {
+        // localStorage может не вместить большое изображение — результат всё равно показываем
+      }
     } finally {
       setIsLoading(false);
       setProcessStatus(null);
@@ -357,7 +376,7 @@ export function ArticleForm() {
         <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-medium text-slate-900">Результат</h2>
 
-          {result && !isLoading && (
+          {result && !isLoading && !isImageResult(result) && (
             <button
               type="button"
               title="Скопировать результат в буфер обмена"
@@ -395,9 +414,20 @@ export function ArticleForm() {
                 {articleTitle}
               </p>
             )}
-            <div className="max-w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed [overflow-wrap:anywhere]">
-              {result}
-            </div>
+            {isImageResult(result) ? (
+              <div className="overflow-hidden rounded-xl bg-slate-50 p-2 sm:p-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={result}
+                  alt={articleTitle ? `Иллюстрация: ${articleTitle}` : "Иллюстрация к статье"}
+                  className="mx-auto h-auto max-h-[70vh] w-full max-w-full rounded-lg object-contain"
+                />
+              </div>
+            ) : (
+              <div className="max-w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed [overflow-wrap:anywhere]">
+                {result}
+              </div>
+            )}
           </div>
         )}
       </section>

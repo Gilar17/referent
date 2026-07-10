@@ -97,7 +97,14 @@ export function loadHistory(): HistoryItem[] {
 }
 
 function saveHistory(items: HistoryItem[]): void {
-  window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT)));
+  try {
+    window.localStorage.setItem(
+      HISTORY_STORAGE_KEY,
+      JSON.stringify(items.slice(0, HISTORY_LIMIT)),
+    );
+  } catch {
+    // QuotaExceededError и подобные — историю не обновляем
+  }
 }
 
 export function addHistoryItem(input: {

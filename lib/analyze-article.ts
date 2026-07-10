@@ -25,6 +25,12 @@ const ACTION_INSTRUCTIONS: Record<AnalyzeAction, string[]> = {
     "Текст должен быть удобен для копирования целиком.",
     "Не добавляй пояснений до или после поста и не добавляй ссылку на источник — она будет добавлена отдельно.",
   ],
+  illustration: [
+    "Create a single English text-to-image prompt that visually represents the article.",
+    "Describe one clear scene: subject, setting, mood, lighting, style.",
+    "No text, logos, watermarks, or UI elements in the image.",
+    "Return only the prompt, nothing else.",
+  ],
 };
 
 function buildPrompt(action: AnalyzeAction, articleText: string): string {
@@ -94,6 +100,12 @@ export async function analyzeArticle(
   }
 
   return result;
+}
+
+export async function createIllustrationPrompt(
+  article: ParsedArticle,
+): Promise<string> {
+  return analyzeArticle(article, "illustration");
 }
 
 export async function summarizeArticle(article: ParsedArticle): Promise<string> {

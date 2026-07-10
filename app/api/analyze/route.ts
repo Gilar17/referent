@@ -1,11 +1,16 @@
 import { isAnalyzeAction, type Action } from "@/lib/actions";
-import { analyzeArticle, translateTitleToRussian } from "@/lib/analyze-article";
+import {
+  analyzeArticle,
+  createIllustrationPrompt,
+  translateTitleToRussian,
+} from "@/lib/analyze-article";
 import {
   AppError,
   httpStatusForError,
   toAppError,
   type ErrorCode,
 } from "@/lib/errors";
+import { generateImage } from "@/lib/huggingface";
 import { fetchAndParseArticle } from "@/lib/parse-article";
 import { NextResponse } from "next/server";
 
@@ -33,6 +38,23 @@ export async function POST(request: Request) {
   try {
     const article = await fetchAndParseArticle(body.url);
     const originalTitle = article.title?.trim() || null;
+
+    if (body.action === "illustration") {
+      const [imagePrompt, title] = await Promise.all([
+        createIllustrationPrompt(article),
+        originalTitle
+          ? translateTitleToRussian(originalTitle)
+          : Promise.resolve(null),
+      ]);
+
+      const result = await generateImage(imagePrompt);
+
+      return NextResponse.json({
+        result,
+        title,
+        imagePrompt,
+      });
+    }
 
     const [result, title] = await Promise.all([
       analyzeArticle(article, body.action, body.url),

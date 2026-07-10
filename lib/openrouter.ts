@@ -1,6 +1,8 @@
 import { AppError } from "@/lib/errors";
 
-export const OPENROUTER_MODEL = "openrouter/free";
+/** Модель для генерации текста. */
+export const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL?.trim() || "google/gemma-4-31b-it:free";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";

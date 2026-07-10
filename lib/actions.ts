@@ -3,7 +3,12 @@
  * Этап 1 плана: типы и ожидаемый формат ответа для каждой кнопки.
  */
 
-export const ANALYZE_ACTIONS = ["summary", "theses", "telegram"] as const;
+export const ANALYZE_ACTIONS = [
+  "summary",
+  "theses",
+  "telegram",
+  "illustration",
+] as const;
 
 export type AnalyzeAction = (typeof ANALYZE_ACTIONS)[number];
 export type Action = AnalyzeAction;
@@ -37,6 +42,12 @@ export const ANALYZE_ACTION_CONTRACTS: Record<AnalyzeAction, ActionContract> = {
     label: "Пост для Telegram",
     responseFormat:
       "Весь пост строго на русском языке (не на английском): хук/заголовок, основной текст; при необходимости эмодзи и абзацы. Текст удобен для копирования. В конце будет добавлена ссылка на источник.",
+  },
+  illustration: {
+    id: "illustration",
+    label: "Иллюстрация",
+    responseFormat:
+      "Англоязычный промпт для text-to-image модели: одна сцена по смыслу статьи, без текста на изображении, без пояснений.",
   },
 };
 

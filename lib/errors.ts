@@ -16,6 +16,8 @@ export const ERROR_CODES = [
   "AI_MODEL",
   "AI_EMPTY",
   "AI_FAILED",
+  "HF_CONFIG",
+  "IMAGE_FAILED",
   "NETWORK",
   "UNKNOWN",
 ] as const;
@@ -37,6 +39,9 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   AI_MODEL: "Модель ИИ сейчас недоступна. Попробуйте позже.",
   AI_EMPTY: "ИИ вернул пустой ответ. Попробуйте ещё раз.",
   AI_FAILED: "Не удалось обработать статью с помощью ИИ. Попробуйте ещё раз.",
+  HF_CONFIG:
+    "Сервис генерации изображений не настроен. Добавьте HUGGINGFACE_API_KEY в .env.local.",
+  IMAGE_FAILED: "Не удалось создать иллюстрацию. Попробуйте ещё раз.",
   NETWORK: "Нет связи с сервером. Проверьте интернет и попробуйте снова.",
   UNKNOWN: "Что-то пошло не так. Попробуйте ещё раз.",
 };
@@ -107,6 +112,8 @@ export function httpStatusForError(code: ErrorCode): number {
     case "AI_MODEL":
     case "AI_EMPTY":
     case "AI_FAILED":
+    case "HF_CONFIG":
+    case "IMAGE_FAILED":
       return 422;
     case "NETWORK":
     case "UNKNOWN":
