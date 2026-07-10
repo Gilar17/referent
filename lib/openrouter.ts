@@ -1,3 +1,5 @@
+import { AppError } from "@/lib/errors";
+
 export const OPENROUTER_MODEL = "openrouter/free";
 
 type ChatMessage = {
@@ -28,9 +30,7 @@ function getApiKey(): string {
   const apiKey = process.env.OPENROUTER_API_KEY?.trim().replace(/^["']|["']$/g, "") ?? "";
 
   if (!apiKey) {
-    throw new Error(
-      "OPENROUTER_API_KEY не задан. Локально добавьте его в .env.local, на Vercel — в Settings → Environment Variables.",
-    );
+    throw new AppError("AI_CONFIG");
   }
 
   return apiKey;
@@ -40,65 +40,77 @@ function getChatCompletionsUrl(): string {
   return "https://openrouter.ai/api/v1/chat/completions";
 }
 
-function formatOpenRouterError(status: number, data: OpenRouterErrorResponse): string {
-  const message = getErrorMessage(data);
+function mapOpenRouterError(status: number, data: OpenRouterErrorResponse): AppError {
+  const message = getErrorMessage(data)?.toLowerCase() ?? "";
 
-  if (message) {
-    if (message.toLowerCase().includes("security policy")) {
-      return "OpenRouter заблокировал ключ политикой безопасности. Проверьте аккаунт и создайте новый ключ на openrouter.ai/keys";
-    }
-
-    return message;
+  if (message.includes("security policy") || status === 403) {
+    return new AppError("AI_FORBIDDEN");
   }
 
   if (status === 401) {
-    return "Неверный API-ключ OpenRouter. Проверьте OPENROUTER_API_KEY в .env.local";
+    return new AppError("AI_AUTH");
   }
 
   if (status === 402) {
-    return "Недостаточно средств на балансе OpenRouter";
-  }
-
-  if (status === 403) {
-    return "OpenRouter отклонил запрос. Проверьте ключ, баланс и доступ к модели";
+    return new AppError("AI_QUOTA");
   }
 
   if (status === 404) {
-    return "Модель OpenRouter недоступна. Используется openrouter/free";
+    return new AppError("AI_MODEL");
   }
 
-  return `OpenRouter вернул ошибку: HTTP ${status}`;
+  if (status === 429) {
+    return new AppError("AI_QUOTA");
+  }
+
+  return new AppError("AI_FAILED");
 }
 
 export async function chatCompletion(messages: ChatMessage[]): Promise<string> {
-  const response = await fetch(getChatCompletionsUrl(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-      "X-Title": "Referent",
-    },
-    body: JSON.stringify({
-      model: OPENROUTER_MODEL,
-      messages,
-      temperature: 0.3,
-    }),
-    signal: AbortSignal.timeout(120000),
-  });
+  let response: Response;
 
-  const data = (await response.json()) as OpenRouterErrorResponse & {
+  try {
+    response = await fetch(getChatCompletionsUrl(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getApiKey()}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        "X-Title": "Referent",
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages,
+        temperature: 0.3,
+      }),
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError("AI_FAILED");
+  }
+
+  let data: OpenRouterErrorResponse & {
     choices?: Array<{ message?: { content?: string } }>;
   };
 
+  try {
+    data = (await response.json()) as typeof data;
+  } catch {
+    throw new AppError("AI_FAILED");
+  }
+
   if (!response.ok) {
-    throw new Error(formatOpenRouterError(response.status, data));
+    throw mapOpenRouterError(response.status, data);
   }
 
   const content = data.choices?.[0]?.message?.content?.trim();
 
   if (!content) {
-    throw new Error("OpenRouter вернул пустой ответ");
+    throw new AppError("AI_EMPTY");
   }
 
   return content;

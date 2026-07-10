@@ -3,6 +3,7 @@ import {
   type AnalyzeAction,
 } from "@/lib/actions";
 import { buildArticleText } from "@/lib/article-text";
+import { AppError } from "@/lib/errors";
 import { chatCompletion } from "@/lib/openrouter";
 import type { ParsedArticle } from "@/lib/parse-article";
 
@@ -57,7 +58,7 @@ export async function analyzeArticle(
   const articleText = buildArticleText(article);
 
   if (!articleText) {
-    throw new Error("Не удалось извлечь текст статьи для анализа");
+    throw new AppError("ARTICLE_PARSE");
   }
 
   const result = await chatCompletion([

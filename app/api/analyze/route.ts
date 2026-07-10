@@ -1,20 +1,33 @@
 import { isAnalyzeAction, type Action } from "@/lib/actions";
 import { analyzeArticle } from "@/lib/analyze-article";
+import {
+  AppError,
+  httpStatusForError,
+  toAppError,
+  type ErrorCode,
+} from "@/lib/errors";
 import { fetchAndParseArticle } from "@/lib/parse-article";
 import { NextResponse } from "next/server";
 
+function errorResponse(code: ErrorCode) {
+  return NextResponse.json({ code }, { status: httpStatusForError(code) });
+}
+
 export async function POST(request: Request) {
-  const body = (await request.json()) as { url?: string; action?: Action };
+  let body: { url?: string; action?: Action };
+
+  try {
+    body = (await request.json()) as { url?: string; action?: Action };
+  } catch {
+    return errorResponse("VALIDATION_REQUEST");
+  }
 
   if (!body.url || !body.action) {
-    return NextResponse.json(
-      { error: "Укажите URL и тип действия" },
-      { status: 400 },
-    );
+    return errorResponse("VALIDATION_REQUEST");
   }
 
   if (!isAnalyzeAction(body.action)) {
-    return NextResponse.json({ error: "Неизвестный тип действия" }, { status: 400 });
+    return errorResponse("VALIDATION_ACTION");
   }
 
   try {
@@ -22,9 +35,7 @@ export async function POST(request: Request) {
     const result = await analyzeArticle(article, body.action, body.url);
     return NextResponse.json({ result });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Не удалось обработать статью";
-
-    return NextResponse.json({ error: message }, { status: 422 });
+    const appError = error instanceof AppError ? error : toAppError(error);
+    return errorResponse(appError.code);
   }
 }

@@ -4,11 +4,18 @@ import {
   ANALYZE_ACTION_CONTRACTS,
   type AnalyzeAction,
 } from "@/lib/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  getFriendlyErrorMessage,
+  isErrorCode,
+  type ErrorCode,
+} from "@/lib/errors";
+import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ApiResponse = {
   result?: string;
-  error?: string;
+  code?: string;
 };
 
 const ACTIONS: {
@@ -52,11 +59,23 @@ function isValidUrl(value: string): boolean {
   }
 }
 
+function resolveErrorCode(data: ApiResponse | null, networkFailed: boolean): ErrorCode {
+  if (networkFailed) {
+    return "NETWORK";
+  }
+
+  if (data && isErrorCode(data.code)) {
+    return data.code;
+  }
+
+  return "UNKNOWN";
+}
+
 export function ArticleForm() {
   const [url, setUrl] = useState("");
   const [activeAction, setActiveAction] = useState<AnalyzeAction | null>(null);
   const [result, setResult] = useState("");
-  const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<ErrorCode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [processStatus, setProcessStatus] = useState<string | null>(null);
 
@@ -76,47 +95,64 @@ export function ArticleForm() {
     const trimmedUrl = url.trim();
 
     if (!trimmedUrl) {
-      setError("Введите URL статьи");
+      setErrorCode("VALIDATION_URL_EMPTY");
       setResult("");
       setProcessStatus(null);
       return;
     }
 
     if (!isValidUrl(trimmedUrl)) {
-      setError("Укажите корректный URL (http:// или https://)");
+      setErrorCode("VALIDATION_URL_INVALID");
       setResult("");
       setProcessStatus(null);
       return;
     }
 
-    setError("");
+    setErrorCode(null);
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
     setProcessStatus("Загружаю статью…");
 
     try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmedUrl, action }),
-      });
+      let response: Response;
 
-      const data = (await response.json()) as ApiResponse;
+      try {
+        response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: trimmedUrl, action }),
+        });
+      } catch {
+        setErrorCode("NETWORK");
+        setResult("");
+        return;
+      }
+
+      let data: ApiResponse | null = null;
+
+      try {
+        data = (await response.json()) as ApiResponse;
+      } catch {
+        setErrorCode("UNKNOWN");
+        setResult("");
+        return;
+      }
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Не удалось выполнить запрос");
+        setErrorCode(resolveErrorCode(data, false));
+        setResult("");
+        return;
       }
 
       setResult(data.result ?? "");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка");
-      setResult("");
     } finally {
       setIsLoading(false);
       setProcessStatus(null);
     }
   }
+
+  const errorMessage = errorCode ? getFriendlyErrorMessage(errorCode) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
@@ -171,10 +207,12 @@ export function ArticleForm() {
           })}
         </div>
 
-        {error && (
-          <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
+        {errorMessage && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle />
+            <AlertTitle>Ошибка</AlertTitle>
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
         )}
       </section>
 
@@ -188,7 +226,7 @@ export function ArticleForm() {
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-medium text-slate-900">Результат</h2>
 
-        {!isLoading && !result && !error && (
+        {!isLoading && !result && !errorCode && (
           <p className="text-slate-500">
             Результат появится здесь после выбора действия.
           </p>

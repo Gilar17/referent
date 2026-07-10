@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
+import { AppError } from "@/lib/errors";
 
 export type ParsedArticle = {
   date: string | null;
@@ -153,24 +154,41 @@ export function parseArticleHtml(html: string): ParsedArticle {
 }
 
 export async function fetchAndParseArticle(url: string): Promise<ParsedArticle> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; ReferentBot/1.0; +https://github.com/referent)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-    signal: AbortSignal.timeout(15000),
-  });
+  let response: Response;
 
-  if (!response.ok) {
-    throw new Error(`Не удалось загрузить страницу: HTTP ${response.status}`);
+  try {
+    response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; ReferentBot/1.0; +https://github.com/referent)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError("ARTICLE_FETCH");
   }
 
-  const html = await response.text();
+  if (!response.ok) {
+    throw new AppError("ARTICLE_FETCH");
+  }
+
+  let html: string;
+
+  try {
+    html = await response.text();
+  } catch {
+    throw new AppError("ARTICLE_FETCH");
+  }
+
   const parsed = parseArticleHtml(html);
 
   if (!parsed.title && !parsed.content) {
-    throw new Error("Не удалось извлечь заголовок и контент статьи");
+    throw new AppError("ARTICLE_PARSE");
   }
 
   return parsed;
