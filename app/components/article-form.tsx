@@ -4,12 +4,20 @@ import {
   ANALYZE_ACTION_CONTRACTS,
   type AnalyzeAction,
 } from "@/lib/actions";
+import { RequestHistory } from "./request-history";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   getFriendlyErrorMessage,
   isErrorCode,
   type ErrorCode,
 } from "@/lib/errors";
+import {
+  addHistoryItem,
+  clearHistory,
+  loadHistory,
+  removeHistoryItem,
+  type HistoryItem,
+} from "@/lib/request-history";
 import { AlertCircle, Check, Copy, Eraser } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -79,8 +87,13 @@ export function ArticleForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [processStatus, setProcessStatus] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const resultSectionRef = useRef<HTMLElement>(null);
   const copyResetTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   useEffect(() => {
     if (!isLoading || !activeAction) {
@@ -123,6 +136,27 @@ export function ArticleForm() {
       window.clearTimeout(copyResetTimerRef.current);
       copyResetTimerRef.current = null;
     }
+  }
+
+  function handleOpenHistoryItem(item: HistoryItem) {
+    setUrl(item.url);
+    setActiveAction(item.action);
+    setErrorCode(null);
+    setProcessStatus(null);
+    setCopied(false);
+    setResult(item.result);
+
+    window.requestAnimationFrame(() => {
+      resultSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function handleRemoveHistoryItem(id: string) {
+    setHistory(removeHistoryItem(id));
+  }
+
+  function handleClearHistory() {
+    setHistory(clearHistory());
   }
 
   async function handleCopy() {
@@ -202,7 +236,21 @@ export function ArticleForm() {
         return;
       }
 
-      setResult(data.result ?? "");
+      const nextResult = data.result?.trim() ?? "";
+      if (!nextResult) {
+        setErrorCode("AI_EMPTY");
+        setResult("");
+        return;
+      }
+
+      setResult(nextResult);
+      setHistory(
+        addHistoryItem({
+          url: trimmedUrl,
+          action,
+          result: nextResult,
+        }),
+      );
     } finally {
       setIsLoading(false);
       setProcessStatus(null);
@@ -332,6 +380,13 @@ export function ArticleForm() {
           </div>
         )}
       </section>
+
+      <RequestHistory
+        items={history}
+        onOpen={handleOpenHistoryItem}
+        onRemove={handleRemoveHistoryItem}
+        onClearAll={handleClearHistory}
+      />
     </div>
   );
 }
