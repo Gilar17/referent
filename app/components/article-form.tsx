@@ -10,8 +10,8 @@ import {
   isErrorCode,
   type ErrorCode,
 } from "@/lib/errors";
-import { AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, Check, Copy, Eraser } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type ApiResponse = {
   result?: string;
@@ -78,6 +78,9 @@ export function ArticleForm() {
   const [errorCode, setErrorCode] = useState<ErrorCode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [processStatus, setProcessStatus] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const resultSectionRef = useRef<HTMLElement>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isLoading || !activeAction) {
@@ -90,6 +93,59 @@ export function ArticleForm() {
 
     return () => window.clearTimeout(timer);
   }, [isLoading, activeAction]);
+
+  useEffect(() => {
+    if (!result || isLoading) {
+      return;
+    }
+
+    resultSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [result, isLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  function handleClear() {
+    setUrl("");
+    setActiveAction(null);
+    setResult("");
+    setErrorCode(null);
+    setIsLoading(false);
+    setProcessStatus(null);
+    setCopied(false);
+
+    if (copyResetTimerRef.current !== null) {
+      window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = null;
+    }
+  }
+
+  async function handleCopy() {
+    if (!result) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(result);
+      setCopied(true);
+
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyResetTimerRef.current = null;
+      }, 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   async function handleAction(action: AnalyzeAction) {
     const trimmedUrl = url.trim();
@@ -112,6 +168,7 @@ export function ArticleForm() {
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
+    setCopied(false);
     setProcessStatus("Загружаю статью…");
 
     try {
@@ -205,6 +262,17 @@ export function ArticleForm() {
               </button>
             );
           })}
+
+          <button
+            type="button"
+            title="Сбросить URL, результат, ошибки и состояние"
+            onClick={handleClear}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Eraser className="size-4" />
+            Очистить
+          </button>
         </div>
 
         {errorMessage && (
@@ -223,8 +291,34 @@ export function ArticleForm() {
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-medium text-slate-900">Результат</h2>
+      <section
+        ref={resultSectionRef}
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm scroll-mt-6"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-medium text-slate-900">Результат</h2>
+
+          {result && !isLoading && (
+            <button
+              type="button"
+              title="Скопировать результат в буфер обмена"
+              onClick={handleCopy}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              {copied ? (
+                <>
+                  <Check className="size-4 text-emerald-600" />
+                  Скопировано
+                </>
+              ) : (
+                <>
+                  <Copy className="size-4" />
+                  Копировать
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         {!isLoading && !result && !errorCode && (
           <p className="text-slate-500">
