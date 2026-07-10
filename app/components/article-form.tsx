@@ -4,7 +4,7 @@ import {
   ANALYZE_ACTION_CONTRACTS,
   type AnalyzeAction,
 } from "@/lib/actions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ApiResponse = {
   result?: string;
@@ -15,28 +15,32 @@ const ACTIONS: {
   id: AnalyzeAction;
   label: string;
   color: string;
+  title: string;
 }[] = [
   {
     id: "summary",
     label: ANALYZE_ACTION_CONTRACTS.summary.label,
     color: "#6BA781",
+    title: "Кратко опишет суть статьи на русском (1–3 абзаца)",
   },
   {
     id: "theses",
     label: ANALYZE_ACTION_CONTRACTS.theses.label,
     color: "#1972B7",
+    title: "Составит список ключевых тезисов статьи",
   },
   {
     id: "telegram",
     label: ANALYZE_ACTION_CONTRACTS.telegram.label,
     color: "#7E70B9",
+    title: "Напишет готовый пост для Telegram со ссылкой на источник",
   },
 ];
 
-const LOADING_MESSAGES: Record<AnalyzeAction, string> = {
-  summary: "Готовим краткое описание…",
-  theses: "Формируем тезисы…",
-  telegram: "Пишем пост для Telegram…",
+const ACTION_PROCESS_MESSAGES: Record<AnalyzeAction, string> = {
+  summary: "Готовлю краткое описание…",
+  theses: "Формирую тезисы…",
+  telegram: "Пишу пост для Telegram…",
 };
 
 function isValidUrl(value: string): boolean {
@@ -54,6 +58,19 @@ export function ArticleForm() {
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [processStatus, setProcessStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoading || !activeAction) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setProcessStatus(ACTION_PROCESS_MESSAGES[activeAction]);
+    }, 1200);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoading, activeAction]);
 
   async function handleAction(action: AnalyzeAction) {
     const trimmedUrl = url.trim();
@@ -61,12 +78,14 @@ export function ArticleForm() {
     if (!trimmedUrl) {
       setError("Введите URL статьи");
       setResult("");
+      setProcessStatus(null);
       return;
     }
 
     if (!isValidUrl(trimmedUrl)) {
       setError("Укажите корректный URL (http:// или https://)");
       setResult("");
+      setProcessStatus(null);
       return;
     }
 
@@ -74,6 +93,7 @@ export function ArticleForm() {
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
+    setProcessStatus("Загружаю статью…");
 
     try {
       const response = await fetch("/api/analyze", {
@@ -94,6 +114,7 @@ export function ArticleForm() {
       setResult("");
     } finally {
       setIsLoading(false);
+      setProcessStatus(null);
     }
   }
 
@@ -121,18 +142,22 @@ export function ArticleForm() {
           type="url"
           value={url}
           onChange={(event) => setUrl(event.target.value)}
-          placeholder="https://example.com/article"
+          placeholder="Введите URL статьи, например: https://example.com/article"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
         />
+        <p className="mt-2 text-xs text-slate-500">
+          Укажите ссылку на англоязычную статью
+        </p>
 
         <div className="mt-4 flex flex-wrap gap-3">
-          {ACTIONS.map(({ id, label, color }) => {
+          {ACTIONS.map(({ id, label, color, title }) => {
             const isActive = activeAction === id;
 
             return (
               <button
                 key={id}
                 type="button"
+                title={title}
                 onClick={() => handleAction(id)}
                 disabled={isLoading}
                 style={{ backgroundColor: color }}
@@ -153,17 +178,15 @@ export function ArticleForm() {
         )}
       </section>
 
+      {processStatus && (
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+          <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+          <span>{processStatus}</span>
+        </div>
+      )}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-medium text-slate-900">Результат</h2>
-
-        {isLoading && (
-          <div className="flex items-center gap-3 text-slate-600">
-            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
-            <span>
-              {activeAction ? LOADING_MESSAGES[activeAction] : "Обработка…"}
-            </span>
-          </div>
-        )}
 
         {!isLoading && !result && !error && (
           <p className="text-slate-500">
