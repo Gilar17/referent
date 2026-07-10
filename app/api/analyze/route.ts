@@ -1,5 +1,5 @@
 import { isAnalyzeAction, type Action } from "@/lib/actions";
-import { analyzeArticle } from "@/lib/analyze-article";
+import { analyzeArticle, translateTitleToRussian } from "@/lib/analyze-article";
 import {
   AppError,
   httpStatusForError,
@@ -32,10 +32,18 @@ export async function POST(request: Request) {
 
   try {
     const article = await fetchAndParseArticle(body.url);
-    const result = await analyzeArticle(article, body.action, body.url);
+    const originalTitle = article.title?.trim() || null;
+
+    const [result, title] = await Promise.all([
+      analyzeArticle(article, body.action, body.url),
+      originalTitle
+        ? translateTitleToRussian(originalTitle)
+        : Promise.resolve(null),
+    ]);
+
     return NextResponse.json({
       result,
-      title: article.title,
+      title,
     });
   } catch (error) {
     const appError = error instanceof AppError ? error : toAppError(error);

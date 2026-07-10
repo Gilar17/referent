@@ -50,6 +50,48 @@ function appendSourceLink(post: string, sourceUrl: string): string {
   return `${trimmed}\n\n${sourceBlock}`;
 }
 
+export async function translateTitleToRussian(title: string): Promise<string> {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const translated = await chatCompletion([
+    {
+      role: "user",
+      content: [
+        "Переведи заголовок статьи на русский язык.",
+        "Верни только перевод заголовка, без кавычек, пояснений и точек в конце, если их не было в оригинале.",
+        "",
+        trimmed,
+      ].join("\n"),
+    },
+  ]);
+
+  return translated.trim() || trimmed;
+}
+
+export async function translateTitleToRussian(title: string): Promise<string> {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const translated = await chatCompletion([
+    {
+      role: "user",
+      content: [
+        "Переведи заголовок статьи на русский язык.",
+        "Верни только перевод заголовка, без кавычек, пояснений и точек в конце, если их не было в оригинале.",
+        "",
+        trimmed,
+      ].join("\n"),
+    },
+  ]);
+
+  return translated.trim() || trimmed;
+}
+
 export async function analyzeArticle(
   article: ParsedArticle,
   action: AnalyzeAction,
