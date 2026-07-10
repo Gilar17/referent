@@ -14,26 +14,22 @@ type ApiResponse = {
 const ACTIONS: {
   id: AnalyzeAction;
   label: string;
-  className: string;
-  activeClassName: string;
+  color: string;
 }[] = [
   {
     id: "summary",
     label: ANALYZE_ACTION_CONTRACTS.summary.label,
-    className: "bg-emerald-100 text-emerald-900 hover:bg-emerald-200",
-    activeClassName: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-600",
+    color: "#6BA781",
   },
   {
     id: "theses",
     label: ANALYZE_ACTION_CONTRACTS.theses.label,
-    className: "bg-amber-100 text-amber-900 hover:bg-amber-200",
-    activeClassName: "bg-amber-600 text-white shadow-sm hover:bg-amber-600",
+    color: "#1972B7",
   },
   {
     id: "telegram",
     label: ANALYZE_ACTION_CONTRACTS.telegram.label,
-    className: "bg-sky-100 text-sky-900 hover:bg-sky-200",
-    activeClassName: "bg-sky-600 text-white shadow-sm hover:bg-sky-600",
+    color: "#7E70B9",
   },
 ];
 
@@ -130,19 +126,24 @@ export function ArticleForm() {
         />
 
         <div className="mt-4 flex flex-wrap gap-3">
-          {ACTIONS.map(({ id, label, className, activeClassName }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleAction(id)}
-              disabled={isLoading}
-              className={`rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                activeAction === id ? activeClassName : className
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          {ACTIONS.map(({ id, label, color }) => {
+            const isActive = activeAction === id;
+
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleAction(id)}
+                disabled={isLoading}
+                style={{ backgroundColor: color }}
+                className={`rounded-xl px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isActive ? "shadow-md ring-2 ring-offset-2 ring-slate-400" : ""
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {error && (
