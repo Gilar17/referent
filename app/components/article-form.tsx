@@ -18,7 +18,7 @@ import {
   removeHistoryItem,
   type HistoryItem,
 } from "@/lib/request-history";
-import { AlertCircle, Check, Copy, Eraser } from "lucide-react";
+import { AlertCircle, Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type ApiResponse = {
@@ -275,9 +275,20 @@ export function ArticleForm() {
       </header>
 
       <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <label htmlFor="article-url" className="mb-2 block text-sm font-medium text-slate-700">
-          URL англоязычной статьи
-        </label>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <label htmlFor="article-url" className="text-sm font-medium text-slate-700">
+            URL статьи
+          </label>
+          <button
+            type="button"
+            title="Сбросить URL, результат, ошибки и состояние"
+            onClick={handleClear}
+            disabled={isLoading}
+            className="shrink-0 text-sm text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Очистить
+          </button>
+        </div>
         <input
           id="article-url"
           type="url"
@@ -310,17 +321,6 @@ export function ArticleForm() {
               </button>
             );
           })}
-
-          <button
-            type="button"
-            title="Сбросить URL, результат, ошибки и состояние"
-            onClick={handleClear}
-            disabled={isLoading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
-          >
-            <Eraser className="size-4 shrink-0" />
-            Очистить
-          </button>
         </div>
 
         {errorMessage && (
