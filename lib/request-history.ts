@@ -6,6 +6,7 @@ import {
 
 export const HISTORY_STORAGE_KEY = "referent.request-history";
 export const HISTORY_LIMIT = 5;
+export const UNKNOWN_ARTICLE_TITLE = "Название не определено";
 
 export type HistoryItem = {
   id: string;
@@ -14,6 +15,8 @@ export type HistoryItem = {
   actionLabel: string;
   result: string;
   createdAt: string;
+  /** Может отсутствовать у старых записей */
+  title?: string | null;
 };
 
 function createId(): string {
@@ -24,12 +27,26 @@ function createId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizeTitle(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function isHistoryItem(value: unknown): value is HistoryItem {
   if (!value || typeof value !== "object") {
     return false;
   }
 
   const item = value as Record<string, unknown>;
+
+  const titleOk =
+    item.title === undefined ||
+    item.title === null ||
+    typeof item.title === "string";
 
   return (
     typeof item.id === "string" &&
@@ -38,8 +55,20 @@ function isHistoryItem(value: unknown): value is HistoryItem {
     typeof item.actionLabel === "string" &&
     typeof item.result === "string" &&
     typeof item.createdAt === "string" &&
-    item.result.trim().length > 0
+    item.result.trim().length > 0 &&
+    titleOk
   );
+}
+
+function normalizeHistoryItem(item: HistoryItem): HistoryItem {
+  return {
+    ...item,
+    title: normalizeTitle(item.title),
+  };
+}
+
+export function getHistoryTitle(item: HistoryItem): string {
+  return normalizeTitle(item.title) ?? UNKNOWN_ARTICLE_TITLE;
 }
 
 export function loadHistory(): HistoryItem[] {
@@ -58,7 +87,10 @@ export function loadHistory(): HistoryItem[] {
       return [];
     }
 
-    return parsed.filter(isHistoryItem).slice(0, HISTORY_LIMIT);
+    return parsed
+      .filter(isHistoryItem)
+      .map(normalizeHistoryItem)
+      .slice(0, HISTORY_LIMIT);
   } catch {
     return [];
   }
@@ -72,6 +104,7 @@ export function addHistoryItem(input: {
   url: string;
   action: AnalyzeAction;
   result: string;
+  title?: string | null;
 }): HistoryItem[] {
   const result = input.result.trim();
   if (!result) {
@@ -85,6 +118,7 @@ export function addHistoryItem(input: {
     actionLabel: ANALYZE_ACTION_CONTRACTS[input.action].label,
     result,
     createdAt: new Date().toISOString(),
+    title: normalizeTitle(input.title),
   };
 
   const next = [item, ...loadHistory().filter((entry) => entry.id !== item.id)].slice(

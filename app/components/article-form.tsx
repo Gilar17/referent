@@ -14,6 +14,7 @@ import {
 import {
   addHistoryItem,
   clearHistory,
+  getHistoryTitle,
   loadHistory,
   removeHistoryItem,
   type HistoryItem,
@@ -23,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 
 type ApiResponse = {
   result?: string;
+  title?: string | null;
   code?: string;
 };
 
@@ -81,6 +83,7 @@ function resolveErrorCode(data: ApiResponse | null, networkFailed: boolean): Err
 
 export function ArticleForm() {
   const [url, setUrl] = useState("");
+  const [articleTitle, setArticleTitle] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<AnalyzeAction | null>(null);
   const [result, setResult] = useState("");
   const [errorCode, setErrorCode] = useState<ErrorCode | null>(null);
@@ -125,6 +128,7 @@ export function ArticleForm() {
 
   function handleClear() {
     setUrl("");
+    setArticleTitle(null);
     setActiveAction(null);
     setResult("");
     setErrorCode(null);
@@ -140,6 +144,7 @@ export function ArticleForm() {
 
   function handleOpenHistoryItem(item: HistoryItem) {
     setUrl(item.url);
+    setArticleTitle(getHistoryTitle(item));
     setActiveAction(item.action);
     setErrorCode(null);
     setProcessStatus(null);
@@ -202,6 +207,7 @@ export function ArticleForm() {
     setActiveAction(action);
     setIsLoading(true);
     setResult("");
+    setArticleTitle(null);
     setCopied(false);
     setProcessStatus("Загружаю статью…");
 
@@ -243,12 +249,17 @@ export function ArticleForm() {
         return;
       }
 
+      const nextTitle =
+        typeof data.title === "string" && data.title.trim() ? data.title.trim() : null;
+
+      setArticleTitle(nextTitle);
       setResult(nextResult);
       setHistory(
         addHistoryItem({
           url: trimmedUrl,
           action,
           result: nextResult,
+          title: nextTitle,
         }),
       );
     } finally {
@@ -375,8 +386,18 @@ export function ArticleForm() {
         )}
 
         {!isLoading && result && (
-          <div className="max-w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed [overflow-wrap:anywhere]">
-            {result}
+          <div className="space-y-3">
+            {articleTitle && (
+              <p
+                title={articleTitle}
+                className="truncate text-sm font-medium text-slate-700"
+              >
+                {articleTitle}
+              </p>
+            )}
+            <div className="max-w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-4 text-base text-slate-800 leading-relaxed [overflow-wrap:anywhere]">
+              {result}
+            </div>
           </div>
         )}
       </section>

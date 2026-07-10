@@ -33,7 +33,10 @@ export async function POST(request: Request) {
   try {
     const article = await fetchAndParseArticle(body.url);
     const result = await analyzeArticle(article, body.action, body.url);
-    return NextResponse.json({ result });
+    return NextResponse.json({
+      result,
+      title: article.title,
+    });
   } catch (error) {
     const appError = error instanceof AppError ? error : toAppError(error);
     return errorResponse(appError.code);
