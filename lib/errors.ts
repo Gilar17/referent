@@ -16,6 +16,7 @@ export const ERROR_CODES = [
   "AI_MODEL",
   "AI_EMPTY",
   "AI_FAILED",
+  "CEREBRAS_CONNECTION",
   "HF_CONFIG",
   "IMAGE_FAILED",
   "NETWORK",
@@ -32,13 +33,16 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   ARTICLE_FETCH: "Не удалось загрузить статью по этой ссылке.",
   ARTICLE_PARSE:
     "Не удалось извлечь текст статьи. Попробуйте другую ссылку или откройте материал в браузере.",
-  AI_CONFIG: "Сервис ИИ не настроен. Обратитесь к администратору или проверьте настройки.",
-  AI_AUTH: "Не удалось авторизоваться в сервисе ИИ. Проверьте API-ключ.",
-  AI_QUOTA: "Лимит запросов к ИИ исчерпан. Попробуйте позже.",
-  AI_FORBIDDEN: "Сервис ИИ отклонил запрос. Попробуйте позже или проверьте доступ.",
-  AI_MODEL: "Модель ИИ сейчас недоступна. Попробуйте позже.",
-  AI_EMPTY: "ИИ вернул пустой ответ. Попробуйте ещё раз.",
-  AI_FAILED: "Не удалось обработать статью с помощью ИИ. Попробуйте ещё раз.",
+  AI_CONFIG:
+    "Cerebras API не настроен. Добавьте CEREBRAS_API_KEY в .env.local или переменные окружения на Vercel.",
+  AI_AUTH: "Неверный API-ключ Cerebras. Проверьте CEREBRAS_API_KEY.",
+  AI_QUOTA: "Превышен лимит запросов Cerebras. Попробуйте позже.",
+  AI_FORBIDDEN: "Cerebras отклонил запрос. Проверьте доступ и настройки ключа.",
+  AI_MODEL: "Модель Cerebras недоступна. Проверьте CEREBRAS_MODEL.",
+  AI_EMPTY: "Cerebras вернул пустой ответ. Попробуйте ещё раз.",
+  AI_FAILED: "Не удалось обработать статью через Cerebras. Попробуйте ещё раз.",
+  CEREBRAS_CONNECTION:
+    "Ошибка соединения с Cerebras. Проверьте интернет и CEREBRAS_BASE_URL.",
   HF_CONFIG:
     "Сервис генерации изображений не настроен. Добавьте HUGGINGFACE_API_KEY в .env.local.",
   IMAGE_FAILED: "Не удалось создать иллюстрацию. Попробуйте ещё раз.",
@@ -112,6 +116,7 @@ export function httpStatusForError(code: ErrorCode): number {
     case "AI_MODEL":
     case "AI_EMPTY":
     case "AI_FAILED":
+    case "CEREBRAS_CONNECTION":
     case "HF_CONFIG":
     case "IMAGE_FAILED":
       return 422;

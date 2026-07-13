@@ -4,7 +4,7 @@ import {
 } from "@/lib/actions";
 import { buildArticleText } from "@/lib/article-text";
 import { AppError } from "@/lib/errors";
-import { chatCompletion } from "@/lib/openrouter";
+import { chatCompletion } from "@/lib/cerebras";
 import type { ParsedArticle } from "@/lib/parse-article";
 
 const ACTION_INSTRUCTIONS: Record<AnalyzeAction, string[]> = {
